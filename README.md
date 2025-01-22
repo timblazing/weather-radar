@@ -7,6 +7,8 @@ A real-time weather radar visualization web application using strictly free reso
 - Real-time weather radar data from RainViewer API
 - Interactive dark-themed map using Leaflet.js
 - Animated radar timeline with play/pause controls
+- Search bar for US States and all 195 countries.
+- Favorite button to save your preferred default map view.
 - Responsive design that works on both desktop and mobile devices
 - Custom-styled controls for better visibility
 - Keyboard controls for frame-by-frame navigation
@@ -27,12 +29,12 @@ cd weather-radar && docker-compose up -d --build
 
 4. Open your browser and navigate to:
 ```
-http://localhost:3000
+http://localhost:3001
 ```
 
 ## Customization
 
-By default, the map is centered on Oklahoma City (35.4676°N, 97.5164°W) with a zoom level of 8, which provides a good view of the state. To customize the map for a different state or region:
+By default, the map is centered on the United States. To customize the map for a different state or region:
 
 1. Find the coordinates (latitude and longitude) for your desired location:
    - Use [LatLong.net](https://www.latlong.net/) - simply enter your city/state name
@@ -42,11 +44,6 @@ By default, the map is centered on Oklahoma City (35.4676°N, 97.5164°W) with a
 ```javascript
 }).setView([latitude, longitude], zoom);
 ```
-
-The zoom level (third parameter) can be adjusted:
-- 8: Good for state-level view
-- 6: Broader regional view
-- 10: Metro area view
 
 ## Technologies Used
 
