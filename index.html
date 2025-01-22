@@ -176,16 +176,25 @@
 </div>
 
 <script>
+    // Map configuration
+    // Current view is centered on Oklahoma City [latitude, longitude]
+    // To customize for your state:
+    // 1. Update the setView coordinates: map.setView([latitude, longitude], zoom)
+    //    - First number is latitude (e.g., 35.4676 for Oklahoma City)
+    //    - Second number is longitude (e.g., -97.5164 for Oklahoma City)
+    //    - Third number is zoom level (8 works well for state-level view)
+    // 2. Optionally adjust maxBounds to restrict map panning:
+    //    - Format: [[south lat, west lng], [north lat, east lng]]
     var map = L.map('mapid', {
         attributionControl: false,
         zoomSnap: 0.5,
         zoomDelta: 0.5,
         wheelDebounceTime: 100,
         wheelPxPerZoomLevel: 120,
-        maxBounds: [[20, -130], [50, -65]],
+        maxBounds: [[20, -130], [50, -65]], // Continental US bounds
         minZoom: 4,
         maxZoom: 12
-    }).setView([35.4676, -97.5164], 8);
+    }).setView([35.4676, -97.5164], 8); // [latitude, longitude], zoom level
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
         attribution: '',
