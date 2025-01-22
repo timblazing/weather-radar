@@ -2,8 +2,6 @@
 
 A real-time weather radar visualization web application using strictly free resources. The application provides an interactive map interface with animated radar data,
 
-![Weather Radar](img/favicon/android-chrome-512x512.png)
-
 ## Features
 
 - Real-time weather radar data from RainViewer API

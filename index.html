@@ -1,166 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Oklahoma Weather Radar</title>
-
+    <title>Weather Radar</title>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
-    <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
-    <link rel="apple-touch-icon" href="img/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="img/favicon/site.webmanifest">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☔</text></svg>">
     <link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style type="text/css">
-        html, body {
-            background: black;
-            margin: 0;
-            padding: 0;
-        }
-
-        .leaflet-control-zoom {
-            background: rgba(87, 87, 87, 0.4) !important;
-            border-radius: 40px !important;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
-            border: none !important;
-            margin: 24px !important;
-            padding: 4px !important;
-        }
-
-        .leaflet-control-zoom a {
-            background: transparent !important;
-            color: white !important;
-            border: none !important;
-            width: 36px !important;
-            height: 36px !important;
-            line-height: 36px !important;
-            font-size: 18px !important;
-            font-weight: 600 !important;
-            transition: transform 0.2s !important;
-        }
-
-        .leaflet-control-zoom a:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .leaflet-control-zoom-in {
-            border-top-left-radius: 40px !important;
-            border-top-right-radius: 40px !important;
-        }
-
-        .leaflet-control-zoom-out {
-            border-bottom-left-radius: 40px !important;
-            border-bottom-right-radius: 40px !important;
-        }
-        
-        #timeline-container {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(87, 87, 87, 0.4);
-            padding: 6px;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            min-width: 500px;
-            max-width: calc(100% - 32px);
-        }
-
-        #play-pause {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            margin-left: 4px;
-            padding: 0;
-            font-size: 20px;
-        }
-
-        #play-pause:hover {
-            transform: scale(1.2);
-        }
-
-        #timeline {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-right: 12px;
-        }
-
-        #timeline-track {
-            flex-grow: 1;
-            height: 6px;
-            background: #F0F0F0;
-            border-radius: 3px;
-            position: relative;
-        }
-
-        #timeline-progress {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: #007AFF;
-            border-radius: 3px;
-            opacity: 0.8;
-        }
-
-        .time-label {
-            font-family: "Open Sans", sans-serif;
-            font-size: 15px;
-            color: white;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        @media (max-width: 600px) {
-            #timeline-container {
-                min-width: unset;
-                width: 85%;
-                max-width: 350px;
-                padding: 4px 8px;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            .time-label {
-                font-size: 13px;
-            }
-
-            #timeline {
-                padding-right: 8px;
-            }
-
-            .leaflet-control-zoom {
-                display: none !important;
-            }
-        }
-    </style>
+    <script type="module" src="script.js"></script>
 </head>
 <body>
 
-<div id="mapid" style="position: absolute; top: 0; left: 0; bottom: 0; right: 0;"></div>
+<div id="mapid"></div>
+<div id="search-container">
+    <div id="search-box">
+        <div class="search-input-container">
+            <input type="text" id="search-input" placeholder="US State or Country" autocomplete="off">
+            <button id="search-toggle" aria-label="Toggle search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+        <div id="search-results"></div>
+    </div>
+</div>
+<button id="favorite-toggle" aria-label="Favorite location">
+    <i class="fa-solid fa-star"></i>
+</button>
 <div id="timeline-container">
     <button id="play-pause" aria-label="Play/Pause">
         <i id="pause-icon" class="fa-solid fa-pause"></i>
@@ -174,249 +44,6 @@
         <span class="time-label" id="end-time">Now</span>
     </div>
 </div>
-
-<script>
-    // Map configuration
-    // Current view is centered on Oklahoma City [latitude, longitude]
-    // To customize for your state:
-    // 1. Update the setView coordinates: map.setView([latitude, longitude], zoom)
-    //    - First number is latitude (e.g., 35.4676 for Oklahoma City)
-    //    - Second number is longitude (e.g., -97.5164 for Oklahoma City)
-    //    - Third number is zoom level (8 works well for state-level view)
-    // 2. Optionally adjust maxBounds to restrict map panning:
-    //    - Format: [[south lat, west lng], [north lat, east lng]]
-    var map = L.map('mapid', {
-        attributionControl: false,
-        zoomSnap: 0.5,
-        zoomDelta: 0.5,
-        wheelDebounceTime: 100,
-        wheelPxPerZoomLevel: 120,
-        maxBounds: [[20, -130], [50, -65]], // Continental US bounds
-        minZoom: 4,
-        maxZoom: 12
-    }).setView([35.4676, -97.5164], 8); // [latitude, longitude], zoom level
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-        attribution: '',
-        subdomains: 'abcd',
-        maxZoom: 18
-    }).addTo(map);
-
-    var apiData = {};
-    var mapFrames = [];
-    var lastPastFramePosition = -1;
-    var radarLayers = [];
-
-    var optionKind = 'radar';
-    var optionTileSize = 512;
-    var optionColorScheme = 4;
-    var optionSmoothData = 1;
-    var optionSnowColors = 1;
-    var optionExtension = 'webp';
-
-    var animationPosition = 0;
-    var animationTimer = false;
-    var isPlaying = true;
-
-    const FRAME_RATE = 1000;
-    const PRELOAD_FRAMES = 5;
-
-    var loadingTilesCount = 0;
-    var loadedTilesCount = 0;
-
-    function startLoadingTile() {
-        loadingTilesCount++;    
-    }
-
-    function finishLoadingTile() { 
-        setTimeout(function() { loadedTilesCount++; }, 250);
-    }
-
-    function isTilesLoading() {
-        return loadingTilesCount > loadedTilesCount;
-    }
-
-    const playPauseBtn = document.getElementById('play-pause');
-    const timelineProgress = document.getElementById('timeline-progress');
-    const currentTimeLabel = document.getElementById('current-time');
-    const endTimeLabel = document.getElementById('end-time');
-
-    function clearAllLayers() {
-        Object.values(radarLayers).forEach(layer => {
-            if (map.hasLayer(layer)) {
-                map.removeLayer(layer);
-            }
-        });
-        radarLayers = {};
-        loadingTilesCount = 0;
-        loadedTilesCount = 0;
-    }
-
-    playPauseBtn.addEventListener('click', function() {
-        if (isPlaying) {
-            stop();
-            document.getElementById('pause-icon').style.display = 'none';
-            document.getElementById('play-icon').style.display = 'block';
-        } else {
-            play();
-            document.getElementById('play-icon').style.display = 'none';
-            document.getElementById('pause-icon').style.display = 'block';
-        }
-        isPlaying = !isPlaying;
-    });
-
-    function addLayer(frame) {
-        if (!radarLayers[frame.path]) {
-            var colorScheme = optionKind == 'satellite' ? optionColorScheme == 255 ? 255 : 0 : optionColorScheme;
-            var smooth = optionKind == 'satellite' ? 0 : optionSmoothData;
-            var snow = optionKind == 'satellite' ? 0 : optionSnowColors;
-
-            var source = new L.TileLayer(apiData.host + frame.path + '/' + optionTileSize + '/{z}/{x}/{y}/' + colorScheme + '/' + smooth + '_' + snow + '.' + optionExtension, {
-                tileSize: 256,
-                zIndex: 5,
-                opacity: 0.01,
-                className: 'radar-layer'
-            });
-
-            source.on('loading', startLoadingTile);
-            source.on('load', finishLoadingTile);
-            source.on('remove', finishLoadingTile);
-
-            radarLayers[frame.path] = source;
-        }
-        if (!map.hasLayer(radarLayers[frame.path])) {
-            map.addLayer(radarLayers[frame.path]);
-        }
-    }
-
-    function changeRadarPosition(position, preloadOnly, force) {
-        while (position >= mapFrames.length) {
-            position -= mapFrames.length;
-        }
-        while (position < 0) {
-            position += mapFrames.length;
-        }
-
-        var currentFrame = mapFrames[animationPosition];
-        var nextFrame = mapFrames[position];
-
-        addLayer(nextFrame);
-
-        if (preloadOnly) {
-            return;
-        }
-
-        if (isTilesLoading() && !force) {
-            if (radarLayers[nextFrame.path]) {
-                radarLayers[nextFrame.path].setOpacity(0);
-            }
-            return;
-        }
-
-        animationPosition = position;
-
-        if (radarLayers[currentFrame.path]) {
-            radarLayers[currentFrame.path].setOpacity(0);
-        }
-        if (radarLayers[nextFrame.path]) {
-            radarLayers[nextFrame.path].setOpacity(1);
-        }
-
-        const date = new Date(nextFrame.time * 1000);
-        const formattedTime = date.toLocaleString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-        currentTimeLabel.textContent = formattedTime;
-
-        const progress = (position / (mapFrames.length - 1)) * 100;
-        timelineProgress.style.width = `${progress}%`;
-    }
-
-    function showFrame(nextPosition, force) {
-        var preloadingDirection = nextPosition - animationPosition > 0 ? 1 : -1;
-
-        changeRadarPosition(nextPosition, false, force);
-        changeRadarPosition(nextPosition + preloadingDirection, true);
-    }
-
-    function stop() {
-        if (animationTimer) {
-            clearTimeout(animationTimer);
-            animationTimer = false;
-            return true;
-        }
-        return false;
-    }
-
-    function play() {
-        var nextPosition = animationPosition + 1;
-        
-        if (nextPosition >= mapFrames.length) {
-            nextPosition = 0;
-        }
-        
-        showFrame(nextPosition);
-        animationTimer = setTimeout(play, FRAME_RATE);
-    }
-
-    function playStop() {
-        if (!stop()) {
-            play();
-        }
-    }
-
-    document.onkeydown = function (e) {
-        e = e || window.event;
-        switch (e.which || e.keyCode) {
-            case 37:
-                stop();
-                showFrame(animationPosition - 1);
-                break;
-
-            case 39:
-                stop();
-                showFrame(animationPosition + 1);
-                break;
-
-            default:
-                return;
-        }
-        e.preventDefault();
-        return false;
-    }
-
-    const style = document.createElement('style');
-    style.textContent = `
-        .streets-layer {
-            filter: invert(1) brightness(1.5) contrast(2) grayscale(1);
-            opacity: 1;
-            mix-blend-mode: screen;
-        }
-    `;
-    document.head.appendChild(style);
-
-    fetch("https://api.rainviewer.com/public/weather-maps.json")
-        .then(response => response.json())
-        .then(data => {
-            apiData = data;
-            if (apiData.radar && apiData.radar.past) {
-                mapFrames = apiData.radar.past;
-                lastPastFramePosition = mapFrames.length - 1;
-                
-                showFrame(lastPastFramePosition, true);
-
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '',
-                    zIndex: 1000,
-                    className: 'streets-layer'
-                }).addTo(map);
-
-                play();
-            }
-        });
-</script>
 
 </body>
 </html>
