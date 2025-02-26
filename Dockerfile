@@ -11,7 +11,7 @@ RUN echo 'server { \
     listen 80; \
     server_name blasinga.me; \
     location /weather-radar { \
-        alias /usr/share/nginx/html/; \
+        root /usr/share/nginx/html; \
         try_files $uri $uri/ /weather-radar/index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
