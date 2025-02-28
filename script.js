@@ -64,6 +64,11 @@ function initMap() {
         showCompass: false
     }), 'top-left');
 
+    // Add attribution control to the map
+    map.addControl(new maplibregl.AttributionControl({
+        customAttribution: 'Radar data © NOAA/NWS | Map data © CartoDB'
+    }), 'bottom-right');
+
     // Set up map event listeners
     map.on('load', function() {
         // Initialize radar data
