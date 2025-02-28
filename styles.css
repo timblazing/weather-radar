@@ -2,6 +2,8 @@ html, body {
     background: black;
     margin: 0;
     padding: 0;
+    height: 100%;
+    width: 100%;
 }
 
 #mapid {
@@ -10,13 +12,14 @@ html, body {
     left: 0;
     bottom: 0;
     right: 0;
+    background-color: #000;
 }
 
 #search-container {
     position: fixed;
     top: 24px;
     right: 24px;
-    z-index: 1001;
+    z-index: 10;
 }
 
 #search-box {
@@ -73,7 +76,7 @@ html, body {
     justify-content: center;
     font-size: 18px;
     transition: all 0.3s ease;
-    z-index: 1001;
+    z-index: 10;
 }
 
 #favorite-toggle:hover {
@@ -143,8 +146,13 @@ html, body {
     transition: background 0.2s;
 }
 
-.search-result:hover {
+.search-result:hover, .search-result.highlighted {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Add a more distinct style for the highlighted item */
+.search-result.highlighted {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 600px) {
@@ -201,7 +209,13 @@ html, body {
     }
 }
 
-.leaflet-control-zoom {
+/* MapLibre GL JS zoom controls */
+.maplibregl-ctrl-top-right {
+    top: 24px;
+    right: 24px;
+}
+
+.maplibregl-ctrl-group {
     background: rgba(87, 87, 87, 0.4) !important;
     border-radius: 40px !important;
     backdrop-filter: blur(8px);
@@ -211,7 +225,7 @@ html, body {
     padding: 4px !important;
 }
 
-.leaflet-control-zoom a {
+.maplibregl-ctrl-group button {
     background: transparent !important;
     color: white !important;
     border: none !important;
@@ -223,17 +237,22 @@ html, body {
     transition: transform 0.2s !important;
 }
 
-.leaflet-control-zoom a:hover {
+/* Make the zoom control icons white */
+.maplibregl-ctrl-icon {
+    filter: brightness(0) invert(1) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
     transform: scale(1.1);
     background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.leaflet-control-zoom-in {
+.maplibregl-ctrl-zoom-in {
     border-top-left-radius: 40px !important;
     border-top-right-radius: 40px !important;
 }
 
-.leaflet-control-zoom-out {
+.maplibregl-ctrl-zoom-out {
     border-bottom-left-radius: 40px !important;
     border-bottom-right-radius: 40px !important;
 }
@@ -251,7 +270,7 @@ html, body {
     gap: 12px;
     backdrop-filter: blur(8px);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 10;
     min-width: 500px;
     max-width: calc(100% - 32px);
 }
@@ -311,10 +330,9 @@ html, body {
     white-space: nowrap;
 }
 
-.streets-layer {
-    filter: invert(1) brightness(1.5) contrast(2) grayscale(1);
-    opacity: 1;
-    mix-blend-mode: screen;
+/* Style for the radar layers */
+.radar-layer {
+    pointer-events: none;
 }
 
 @media (max-width: 600px) {
@@ -333,9 +351,5 @@ html, body {
 
     #timeline {
         padding-right: 8px;
-    }
-
-    .leaflet-control-zoom {
-        display: none !important;
     }
 }
