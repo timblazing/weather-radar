@@ -668,7 +668,7 @@ function getUserLocation() {
                 // Fly to user location with zoom level 10
                 map.flyTo({
                     center: [userLocation.lng, userLocation.lat],
-                    zoom: 11,
+                    zoom: 9,
                     essential: true,
                     duration: 1500
                 });
