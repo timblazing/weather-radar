@@ -13,8 +13,8 @@ let isMapInteracting = false;
 let isPaused = false;
 
 // Constants
-const FRAME_RATE = 500; // milliseconds between frames
-const INTERACTION_FRAME_RATE = 750; // slower frame rate during interaction
+const FRAME_RATE = 1000; // milliseconds between frames (increased for slower animation)
+const INTERACTION_FRAME_RATE = 1200; // slower frame rate during interaction
 const PRELOAD_FRAMES = 5; // number of frames to preload
 const MAX_CONCURRENT_TILE_LOADS = 4;
 
@@ -34,6 +34,10 @@ const currentTimeLabel = document.getElementById('current-time');
 const endTimeLabel = document.getElementById('end-time');
 const timelineTrack = document.getElementById('timeline-track');
 const timelineProgress = document.getElementById('timeline-progress');
+const locationToggle = document.getElementById('location-toggle');
+
+// Add a variable to track the user location marker
+let userLocationMarker = null;
 
 // Initialize the map
 function initMap() {
@@ -48,35 +52,93 @@ function initMap() {
         zoom = savedLocation.zoom;
     }
 
-    // Initialize MapLibre GL map with CartoDB Dark Matter style
+    // Initialize MapLibre GL map with a custom dark style
     map = new maplibregl.Map({
         container: 'mapid',
+        // Use Dark Matter style which is dark with light labels
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         center: center,
         zoom: zoom,
         minZoom: 2,
         maxZoom: 18,
-        attributionControl: false
+        attributionControl: false // We'll add a custom attribution control
     });
 
-    // Add zoom and rotation controls to the map in the top left
-    map.addControl(new maplibregl.NavigationControl({
-        showCompass: false
-    }), 'top-left');
-
-    // Add attribution control to the map
-    map.addControl(new maplibregl.AttributionControl({
-        customAttribution: 'Radar data © NOAA/NWS | Map data © CartoDB'
-    }), 'bottom-right');
-
+    // Removed zoom controls as requested
+    
     // Set up map event listeners
     map.on('load', function() {
+        // Add custom attribution control to the map after the map is loaded
+        map.addControl(new maplibregl.AttributionControl({
+            compact: true, // Always use compact mode
+            customAttribution: 'Radar data © NOAA/NWS | Map data © CartoDB'
+        }), 'bottom-right');
+        
+        // Apply custom styling to the attribution control
+        setTimeout(() => {
+            const attributionButton = document.querySelector('.maplibregl-ctrl-attrib-button');
+            if (attributionButton) {
+                attributionButton.innerHTML = '<i class="fa-solid fa-info"></i>';
+                attributionButton.classList.add('custom-attribution-button');
+            }
+            
+            // Ensure attribution is collapsed by default
+            const attributionControl = document.querySelector('.maplibregl-ctrl-attrib');
+            if (attributionControl) {
+                attributionControl.classList.add('maplibregl-ctrl-attrib-collapsed');
+            }
+        }, 100);
+        
+        // Enhance the base map style for better visibility with radar overlay
+        const style = map.getStyle();
+        
+        // Increase contrast of the base map
+        if (style && style.layers) {
+            style.layers.forEach(layer => {
+                // Make roads more visible but not too bright
+                if (layer.id.includes('road') && layer.type === 'line') {
+                    if (map.getLayer(layer.id)) {
+                        // Make roads a subtle gray color
+                        if (map.getPaintProperty(layer.id, 'line-color')) {
+                            map.setPaintProperty(layer.id, 'line-color', '#aaaaaa');
+                        }
+                        
+                        // Keep line width moderate
+                        if (map.getPaintProperty(layer.id, 'line-width')) {
+                            const currentWidth = map.getPaintProperty(layer.id, 'line-width');
+                            if (typeof currentWidth === 'number') {
+                                // Only increase width slightly
+                                map.setPaintProperty(layer.id, 'line-width', currentWidth * 1.05);
+                            }
+                        }
+                    }
+                }
+                
+                // Enhance text labels
+                if (layer.type === 'symbol') {
+                    if (map.getLayer(layer.id)) {
+                        // Make text brighter
+                        if (map.getPaintProperty(layer.id, 'text-color')) {
+                            map.setPaintProperty(layer.id, 'text-color', '#ffffff');
+                        }
+                        
+                        // Add text halo for better readability
+                        map.setPaintProperty(layer.id, 'text-halo-width', 1.5);
+                        map.setPaintProperty(layer.id, 'text-halo-color', 'rgba(0, 0, 0, 0.75)');
+                    }
+                }
+            });
+        }
+        
         // Initialize radar data
         fetchRadarData();
         
         // Load saved map state if exists
         if (savedLocation) {
             checkCurrentView();
+        } else {
+            // Try to get user's location on initial load if no saved location
+            getUserLocation();
         }
     });
     
@@ -365,19 +427,6 @@ function clearAllLayers() {
     resetTileCounters();
 }
 
-playPauseButton.addEventListener('click', function() {
-    if (isPlaying) {
-        stop();
-        document.getElementById('pause-icon').style.display = 'none';
-        document.getElementById('play-icon').style.display = 'block';
-    } else {
-        play();
-        document.getElementById('play-icon').style.display = 'none';
-        document.getElementById('pause-icon').style.display = 'block';
-    }
-    isPlaying = !isPlaying;
-});
-
 function addLayer(frame) {
     if (!radarLayers[frame.path]) {
         var colorScheme = optionKind == 'satellite' ? optionColorScheme == 255 ? 255 : 0 : optionColorScheme;
@@ -397,6 +446,23 @@ function addLayer(frame) {
         }
         
         if (!map.getLayer(layerId)) {
+            // Find the first label layer to insert the radar layer before it
+            let firstLabelLayerId = null;
+            const style = map.getStyle();
+            
+            if (style && style.layers) {
+                for (const layer of style.layers) {
+                    if (layer.type === 'symbol' || 
+                        layer.id.includes('label') || 
+                        layer.id.includes('place') || 
+                        layer.id.includes('poi')) {
+                        firstLabelLayerId = layer.id;
+                        break;
+                    }
+                }
+            }
+            
+            // Add the radar layer before the first label layer
             map.addLayer({
                 id: layerId,
                 type: 'raster',
@@ -410,7 +476,9 @@ function addLayer(frame) {
                 layout: {
                     visibility: 'visible'
                 }
-            });
+            }, firstLabelLayerId); // This is the key change - insert before labels
+            
+            // We don't need to modify the map style here anymore since we do it in initMap
         }
         
         radarLayers[frame.path] = {
@@ -421,17 +489,59 @@ function addLayer(frame) {
 }
 
 function cleanupLayers(currentPosition) {
+    // First identify which layers to remove
+    const layersToRemove = [];
+    
     Object.keys(radarLayers).forEach(path => {
         const frameIndex = mapFrames.findIndex(frame => frame.path === path);
-        if (frameIndex === -1) return;
+        if (frameIndex === -1) {
+            layersToRemove.push(path);
+            return;
+        }
         
+        // Keep layers that are within the preload window
+        // Also handle the case where we're near the beginning or end of the frames
         const distance = Math.abs(frameIndex - currentPosition);
-        if (distance > PRELOAD_FRAMES && map.getLayer(path)) {
-            map.removeLayer(path);
-            map.removeSource(path);
-            delete radarLayers[path];
+        const wrappedDistance = Math.min(
+            distance,
+            Math.abs(frameIndex + mapFrames.length - currentPosition),
+            Math.abs(frameIndex - mapFrames.length - currentPosition)
+        );
+        
+        if (wrappedDistance > PRELOAD_FRAMES) {
+            layersToRemove.push(path);
         }
     });
+    
+    // Then remove them in a separate step to avoid modification during iteration
+    layersToRemove.forEach(path => {
+        if (map.getLayer(path)) {
+            // First set opacity to 0 before removing to prevent flashing
+            map.setPaintProperty(path, 'raster-opacity', 0);
+            map.removeLayer(path);
+        }
+        if (map.getSource(path)) {
+            map.removeSource(path);
+        }
+        delete radarLayers[path];
+    });
+}
+
+// Function to clear all radar layers except the one specified
+function clearAllLayersExcept(pathToKeep) {
+    for (let path in radarLayers) {
+        if (path !== pathToKeep) {
+            if (map.getLayer(path)) {
+                map.setPaintProperty(path, 'raster-opacity', 0);
+                map.removeLayer(path);
+            }
+            if (map.getSource(path)) {
+                map.removeSource(path);
+            }
+            delete radarLayers[path];
+        }
+    }
+    resetTileCounters();
 }
 
 function changeRadarPosition(position, preloadOnly, force) {
@@ -457,26 +567,18 @@ function changeRadarPosition(position, preloadOnly, force) {
         return;
     }
 
-    // Special case for looping back to the beginning
-    if (position === 0 && animationPosition === mapFrames.length - 1) {
-        // We're looping back to the beginning
-        // First, clear all existing radar layers except the one we're about to show
-        clearAllLayersExcept(nextFrame.path);
-        
-        // Now make the first frame visible
-        if (radarLayers[nextFrame.path]) {
-            map.setPaintProperty(nextFrame.path, 'raster-opacity', 1);
-        }
-    } else {
-        // Normal case - set the new frame visible first, then hide the old one
-        if (radarLayers[nextFrame.path]) {
-            map.setPaintProperty(nextFrame.path, 'raster-opacity', 1);
-        }
-        
-        if (currentFrame && radarLayers[currentFrame.path]) {
-            map.setPaintProperty(currentFrame.path, 'raster-opacity', 0);
-        }
+    // Show the current frame
+    if (radarLayers[nextFrame.path]) {
+        map.setPaintProperty(nextFrame.path, 'raster-opacity', 0.65);
     }
+    
+    // Hide the previous frame
+    if (currentFrame && radarLayers[currentFrame.path] && currentFrame.path !== nextFrame.path) {
+        map.setPaintProperty(currentFrame.path, 'raster-opacity', 0);
+    }
+    
+    // Clean up other layers
+    cleanupLayers(position);
 
     // Update animation position
     animationPosition = position;
@@ -494,29 +596,11 @@ function changeRadarPosition(position, preloadOnly, force) {
     timelineProgress.style.width = `${progress}%`;
 }
 
-// Function to clear all radar layers except the one specified
-function clearAllLayersExcept(pathToKeep) {
-    for (let path in radarLayers) {
-        if (path !== pathToKeep) {
-            if (map.getLayer(path)) {
-                map.setPaintProperty(path, 'raster-opacity', 0);
-                map.removeLayer(path);
-            }
-            if (map.getSource(path)) {
-                map.removeSource(path);
-            }
-            delete radarLayers[path];
-        }
-    }
-}
-
-// Simplified preload function
+// Improved preload function to load frames more efficiently
 function preloadFrames(startPosition, count) {
     for (let i = 0; i < count; i++) {
         let position = (startPosition + i) % mapFrames.length;
-        if (mapFrames[position]) {
-            addLayer(mapFrames[position]);
-        }
+        addLayer(mapFrames[position]);
     }
 }
 
@@ -536,134 +620,26 @@ function showFrame(nextPosition, force) {
 function stop() {
     if (animationTimer) {
         clearTimeout(animationTimer);
-        animationTimer = false;
+        animationTimer = null;
         return true;
     }
     return false;
 }
 
 function play() {
+    if (animationTimer) {
+        clearTimeout(animationTimer);
+    }
+    
     var nextPosition = animationPosition + 1;
     
     if (nextPosition >= mapFrames.length) {
-        // We're at the end, loop back to the beginning
-        
-        // Make sure the first frame is loaded and visible BEFORE hiding the last frame
-        if (mapFrames[0]) {
-            addLayer(mapFrames[0]);
-            if (radarLayers[mapFrames[0].path]) {
-                map.setPaintProperty(mapFrames[0].path, 'raster-opacity', 1);
-            }
-        }
-        
-        // Now update the animation position and UI
-        animationPosition = 0;
-        
-        // Update UI elements
-        const date = new Date(mapFrames[0].time * 1000);
-        const formattedTime = date.toLocaleString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-        currentTimeLabel.textContent = formattedTime;
-        timelineProgress.style.width = '0%';
-        
-        // Only after the first frame is visible, hide the last frame
-        if (mapFrames[mapFrames.length - 1] && radarLayers[mapFrames[mapFrames.length - 1].path]) {
-            map.setPaintProperty(mapFrames[mapFrames.length - 1].path, 'raster-opacity', 0);
-        }
-        
-        // Continue the animation
-        const currentRate = isMapInteracting ? INTERACTION_FRAME_RATE : FRAME_RATE;
-        animationTimer = setTimeout(play, currentRate);
-        return;
+        nextPosition = 0;
     }
     
     showFrame(nextPosition);
     
-    const currentRate = isMapInteracting ? INTERACTION_FRAME_RATE : FRAME_RATE;
-    animationTimer = setTimeout(play, currentRate);
-}
-
-function playStop() {
-    if (!stop()) {
-        play();
-    }
-}
-
-document.onkeydown = function (e) {
-    e = e || window.event;
-    switch (e.which || e.keyCode) {
-        case 37:
-            stop();
-            showFrame(animationPosition - 1);
-            break;
-
-        case 39:
-            stop();
-            showFrame(animationPosition + 1);
-            break;
-
-        default:
-            return;
-    }
-    e.preventDefault();
-    return false;
-}
-
-let fetchTimeout = null;
-function fetchRadarData() {
-    if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-    }
-    
-    fetchTimeout = setTimeout(() => {
-        fetch("https://api.rainviewer.com/public/weather-maps.json")
-            .then(response => response.json())
-            .then(data => {
-                apiData = data;
-                if (apiData.radar && apiData.radar.past) {
-                    const wasPlaying = isPlaying && !isPaused;
-                    if (wasPlaying) {
-                        stop();
-                    }
-                    
-                    mapFrames = apiData.radar.past;
-                    lastPastFramePosition = mapFrames.length - 1;
-                    
-                    // Ensure both first and last frames are fully loaded
-                    // This is critical for smooth looping
-                    if (mapFrames.length > 0) {
-                        // Load first frame
-                        addLayer(mapFrames[0]);
-                        
-                        // Load last frame
-                        addLayer(mapFrames[lastPastFramePosition]);
-                        
-                        // Also preload the second frame to ensure smooth start
-                        if (mapFrames.length > 1) {
-                            addLayer(mapFrames[1]);
-                        }
-                        
-                        // And the second-to-last frame for smooth looping
-                        if (mapFrames.length > 2) {
-                            addLayer(mapFrames[lastPastFramePosition - 1]);
-                        }
-                    }
-                    
-                    showFrame(lastPastFramePosition, true);
-
-                    if (wasPlaying) {
-                        play();
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching radar data:", error);
-                setTimeout(fetchRadarData, 30000);
-            });
-    }, 100);
+    animationTimer = setTimeout(play, FRAME_RATE);
 }
 
 // Update locations.js to work with MapLibre GL JS
@@ -674,6 +650,76 @@ export function focusMapOnLocation(map, location) {
         essential: true,
         duration: 1000
     });
+}
+
+// Function to get user's current location and center the map
+function getUserLocation() {
+    if (navigator.geolocation) {
+        locationToggle.classList.add('active');
+        
+        navigator.geolocation.getCurrentPosition(
+            // Success callback
+            function(position) {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                
+                // Fly to user location with zoom level 10
+                map.flyTo({
+                    center: [userLocation.lng, userLocation.lat],
+                    zoom: 11,
+                    essential: true,
+                    duration: 1500
+                });
+                
+                // Remove existing marker if it exists
+                if (userLocationMarker) {
+                    userLocationMarker.remove();
+                }
+                
+                // Create a DOM element for the marker (blue dot)
+                const el = document.createElement('div');
+                el.className = 'user-location-marker';
+                
+                // Add the marker to the map with no default marker element
+                userLocationMarker = new maplibregl.Marker({
+                    element: el,
+                    // Disable the default marker
+                    anchor: 'center'
+                })
+                .setLngLat([userLocation.lng, userLocation.lat])
+                .addTo(map);
+                
+                setTimeout(() => {
+                    locationToggle.classList.remove('active');
+                }, 2000);
+            },
+            // Error callback
+            function(error) {
+                console.error("Error getting user location:", error);
+                locationToggle.classList.remove('active');
+                
+                // Show a brief error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'location-error';
+                errorMessage.textContent = 'Could not access your location';
+                document.body.appendChild(errorMessage);
+                
+                setTimeout(() => {
+                    errorMessage.remove();
+                }, 3000);
+            },
+            // Options
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        console.error("Geolocation is not supported by this browser");
+    }
 }
 
 // Initialize the map when the page loads
@@ -691,6 +737,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners
     favoriteToggle.addEventListener('click', saveMapState);
     
+    // Location button event listener
+    locationToggle.addEventListener('click', getUserLocation);
+    
     // SIMPLIFIED SEARCH TOGGLE HANDLER
     searchToggle.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -704,7 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Timeline track event listeners
+    // Timeline track event listeners - remove duplicate listeners
     timelineTrack.addEventListener('mousedown', function(e) {
         isDragging = true;
         stop();
@@ -820,27 +869,82 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Keyboard navigation
-    document.onkeydown = function (e) {
-        e = e || window.event;
-        switch (e.which || e.keyCode) {
-            case 37:
-                stop();
-                showFrame(animationPosition - 1);
-                break;
-
-            case 39:
-                stop();
-                showFrame(animationPosition + 1);
-                break;
-
-            default:
-                return;
+    // Keyboard navigation for left/right arrows
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') {
+            stop();
+            showFrame(animationPosition - 1);
+            e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+            stop();
+            showFrame(animationPosition + 1);
+            e.preventDefault();
         }
-        e.preventDefault();
-        return false;
-    }
+    });
+    
+    // Set up auto-refresh for radar data
+    fetchRadarData();
+    setInterval(fetchRadarData, 300000); // Refresh every 5 minutes (300000 ms)
 });
+
+let fetchTimeout = null;
+function fetchRadarData() {
+    if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+    }
+    
+    fetchTimeout = setTimeout(() => {
+        fetch("https://api.rainviewer.com/public/weather-maps.json")
+            .then(response => response.json())
+            .then(data => {
+                apiData = data;
+                if (apiData.radar && apiData.radar.past) {
+                    const wasPlaying = isPlaying && !isPaused;
+                    if (wasPlaying) {
+                        stop();
+                    }
+                    
+                    // Use the original frames without interpolation
+                    mapFrames = apiData.radar.past;
+                    lastPastFramePosition = mapFrames.length - 1;
+                    
+                    // Ensure both first and last frames are fully loaded
+                    // This is critical for smooth looping
+                    if (mapFrames.length > 0) {
+                        // Load first frame
+                        addLayer(mapFrames[0]);
+                        
+                        // Load last frame
+                        addLayer(mapFrames[lastPastFramePosition]);
+                        
+                        // Also preload the second frame to ensure smooth start
+                        if (mapFrames.length > 1) {
+                            addLayer(mapFrames[1]);
+                        }
+                        
+                        // And the second-to-last frame for smooth looping
+                        if (mapFrames.length > 2) {
+                            addLayer(mapFrames[lastPastFramePosition - 1]);
+                        }
+                    }
+                    
+                    showFrame(lastPastFramePosition, true);
+
+                    // Always start playing automatically when data is loaded
+                    isPlaying = true;
+                    play();
+                    
+                    // Update the play/pause button UI
+                    document.getElementById('play-icon').style.display = 'none';
+                    document.getElementById('pause-icon').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching radar data:", error);
+                setTimeout(fetchRadarData, 30000);
+            });
+    }, 100);
+}
 
 function highlightSearchResult(index) {
     const results = document.querySelectorAll('.search-result');

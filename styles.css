@@ -59,9 +59,9 @@ html, body {
 }
 
 #favorite-toggle {
-    position: fixed;
+    position: absolute;
     top: 82px;
-    right: 24px;
+    left: 24px;
     width: 42px;
     height: 42px;
     border: none;
@@ -87,9 +87,67 @@ html, body {
     color: #FFD700;
 }
 
+/* Move location toggle to top right */
+#location-toggle {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    width: 42px;
+    height: 42px;
+    border: none;
+    background: rgba(87, 87, 87, 0.4);
+    backdrop-filter: blur(8px);
+    border-radius: 40px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+#location-toggle:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+#location-toggle.active {
+    color: #4285F4;
+}
+
+.location-error {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    z-index: 1000;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 @media (max-width: 600px) {
     #favorite-toggle {
-        right: 16px;
+        top: 74px;
+        left: 16px;
+    }
+    
+    #location-toggle {
+        top: 16px;
+        left: 16px;
     }
 }
 
@@ -157,8 +215,10 @@ html, body {
 
 @media (max-width: 600px) {
     #search-container {
+        top: 16px;
         right: 16px;
-        width: calc(100% - 32px);
+        width: calc(100% - 100px);
+        max-width: 70%;
     }
 
     #search-box {
@@ -204,57 +264,164 @@ html, body {
     }
 
     #search-results {
-        margin-top: 4px;
+        position: absolute;
+        top: 100%;
+        right: 0;
         width: 100%;
+        max-height: 200px;
+        margin-top: 4px;
+        z-index: 1000;
     }
 }
 
 /* MapLibre GL JS zoom controls */
-.maplibregl-ctrl-top-right {
-    top: 24px;
-    right: 24px;
+.maplibregl-ctrl-top-left {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
 }
 
 .maplibregl-ctrl-group {
-    background: rgba(87, 87, 87, 0.4) !important;
-    border-radius: 40px !important;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
-    border: none !important;
-    margin: 24px !important;
-    padding: 4px !important;
+    background: none;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 .maplibregl-ctrl-group button {
-    background: transparent !important;
-    color: white !important;
-    border: none !important;
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    transition: transform 0.2s !important;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+    color: white;
+    position: relative;
+    display: block;
 }
 
-/* Make the zoom control icons white */
+/* Remove the border between buttons */
+.maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 0;
+}
+
+/* Style for the zoom control icons */
 .maplibregl-ctrl-icon {
-    filter: brightness(0) invert(1) !important;
+    opacity: 0;
 }
 
+/* Custom plus sign for zoom in */
+.maplibregl-ctrl-zoom-in::after {
+    content: "+";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Custom minus sign for zoom out */
+.maplibregl-ctrl-zoom-out::after {
+    content: "−";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Hover effect */
 .maplibregl-ctrl-group button:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.7);
 }
 
-.maplibregl-ctrl-zoom-in {
-    border-top-left-radius: 40px !important;
-    border-top-right-radius: 40px !important;
+/* Round only the top corners of the top button */
+.maplibregl-ctrl-group button:first-child {
+    border-radius: 4px 4px 0 0;
 }
 
-.maplibregl-ctrl-zoom-out {
-    border-bottom-left-radius: 40px !important;
-    border-bottom-right-radius: 40px !important;
+/* Round only the bottom corners of the bottom button */
+.maplibregl-ctrl-group button:last-child {
+    border-radius: 0 0 4px 4px;
+}
+
+/* For groups with only one button, round all corners */
+.maplibregl-ctrl-group button:only-child {
+    border-radius: 4px;
+}
+
+/* Custom styling for attribution control only */
+.custom-attribution-button {
+    width: 30px !important;
+    height: 30px !important;
+    background: rgba(87, 87, 87, 0.4) !important;
+    backdrop-filter: blur(8px) !important;
+    border-radius: 40px !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.custom-attribution-button:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+    background-color: rgba(87, 87, 87, 0.6) !important;
+}
+
+.maplibregl-ctrl-attrib-button {
+    background-image: none !important;
+}
+
+.maplibregl-ctrl-attrib {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    padding: 2px 5px !important;
+    border-radius: 4px !important;
+    font-family: "Open Sans", sans-serif !important;
+    font-size: 11px !important;
+    color: white !important;
+}
+
+.maplibregl-ctrl-attrib a {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-decoration: none !important;
+}
+
+.maplibregl-ctrl-attrib a:hover {
+    color: white !important;
+    text-decoration: underline !important;
+}
+
+.maplibregl-ctrl-bottom-right {
+    bottom: 10px !important;
+    right: 10px !important;
+}
+
+/* Make sure the attribution is collapsed by default */
+.maplibregl-ctrl-attrib.maplibregl-ctrl-attrib-collapsed {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    .maplibregl-ctrl-bottom-right {
+        bottom: 80px !important; /* Position below the timeline */
+        right: 10px !important;
+        z-index: 5 !important;
+    }
 }
 
 #timeline-container {
@@ -351,5 +518,45 @@ html, body {
 
     #timeline {
         padding-right: 8px;
+    }
+}
+
+/* Hide zoom controls completely */
+.maplibregl-ctrl-group:has(.maplibregl-ctrl-zoom-in, .maplibregl-ctrl-zoom-out) {
+    display: none;
+}
+
+/* Alternative selectors for browsers that don't support :has() */
+.maplibregl-ctrl-zoom-in, 
+.maplibregl-ctrl-zoom-out {
+    display: none;
+}
+
+/* Hide the container if it only contains zoom controls */
+.maplibregl-ctrl-group:empty {
+    display: none;
+}
+
+/* User location marker styling */
+.user-location-marker {
+    width: 16px;
+    height: 16px;
+    background-color: rgba(0, 120, 255, 0.6);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 0 rgba(0, 120, 255, 0.4);
+    animation: pulse 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 120, 255, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 120, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 120, 255, 0);
     }
 }
