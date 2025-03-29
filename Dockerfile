@@ -8,7 +8,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 # Create a new configuration file with port 3001
 RUN echo 'server { \
-    listen 3001; \
+    listen 3003; \
     server_name localhost; \
     location / { \
         root /usr/share/nginx/html; \
@@ -16,5 +16,5 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Expose port 3001
-EXPOSE 3001
+# Expose port 3003
+EXPOSE 3003
