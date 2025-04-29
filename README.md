@@ -49,19 +49,15 @@ By default, the map is centered on the United States. To customize the map for a
 
 - HTML5
 - JavaScript
-- Leaflet.js for map visualization
+- MapLibre GL JS for map visualization
 - RainViewer API for weather data
 - CARTO dark basemap
 - Docker & Nginx for deployment
 - Font Awesome for icons
 - Google Fonts (Open Sans)
 
-## License
-
-This project is open source and available under the MIT License.
-
 ## Credits
 
 - Weather data provided by [RainViewer](https://www.rainviewer.com/)
-- Maps powered by [Leaflet](https://leafletjs.com/)
+- Maps powered by [MapLibre GL JS](https://maplibre.org/)
 - Base map tiles by [CARTO](https://carto.com/)
