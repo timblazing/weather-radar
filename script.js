@@ -49,8 +49,8 @@ let userLocationMarker = null;
 // Initialize the map
 function initMap() {
     // Default center if no saved location
-    let center = [-95.7129, 37.0902]; // US center
-    let zoom = 4;
+    let center = [-95.7129, 37.0902]; // US center in lon, lat format
+    let zoom = 4; // Can be any number from 2 to 18
 
     // Try to load saved location
     const savedLocation = loadMapState();
